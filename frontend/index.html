@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verta - Egyptian Sign Language Translator</title>
+    
+    <!-- TensorFlow.js for ML -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    
+    <style>
+        /* ===== RESET & BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            background-color: #ffffff;
+        }
+        
+        /* ===== HEADER STYLES ===== */
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(26, 54, 93, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .main-nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        .main-nav li {
+            margin-left: 2rem;
+        }
+        
+        .main-nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .main-nav a:hover {
+            color: #3182ce;
+        }
+        
+        /* ===== HERO SECTION ===== */
+        .hero-section {
+            height: 100vh;
+            background: linear-gradient(135deg, #1a365d 0%, #3182ce 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            padding: 0 2rem;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            max-width: 800px;
+        }
+        
+        .hero-description {
+            font-size: 1.2rem;
+            max-width: 600px;
+            opacity: 0.9;
+        }
+        
+        /* ===== MAIN CONTENT SPACING ===== */
+        main {
+            margin-top: 80px;
+        }
+        
+        /* ===== FEATURES SECTION ===== */
+        .features-section {
+            padding: 4rem 2rem;
+            background-color: #f7fafc;
+        }
+        
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #1a365d;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #3182ce;
+        }
+        
+        /* ===== DEMO is here ===== */
+        .demo-section {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .demo-subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+            color: #2d3748;
+        }
+        
+        .webcam-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        #webcam {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .camera-controls {
+            margin-top: 1rem;
+        }
+        
+        .control-btn {
+            background-color: #3182ce;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            margin: 0 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        .control-btn:hover:not(:disabled) {
+            background-color: #2c5282;
+        }
+        
+        .control-btn:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+        }
+        
+        .results-display {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            min-height: 100px;
+        }
+        
+        .results-heading {
+            color: #1a365d;
+            margin-bottom: 1rem;
+        }
+        
+        .text-input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .text-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+        
+        .convert-btn {
+            background-color: #3182ce;
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .convert-btn:hover {
+            background-color: #2c5282;
+        }
+        
+        .animation-placeholder {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        /* ===== ABOUT the project SECTION ===== */
+        .about-section {
+            padding: 4rem 2rem;
+            background-color: #f7fafc;
+        }
+        
+        .about-text {
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        
+        .technical-details {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .tech-heading {
+            font-size: 1.5rem;
+            color: #3182ce;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .tech-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .tech-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e2e8f0;
+            color: #2d3748;
+        }
+        
+        .tech-list li:last-child {
+            border-bottom: none;
+        }
+        
+        /* ===== FOOTER ===== */
+        .main-footer {
+            background-color: #1a365d;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .main-footer p {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* ===== MOBILE RESPONSIVENESS ===== */
+        @media (max-width: 768px) {
+            .main-header {
+                padding: 1rem;
+                flex-direction: column;
+            }
+            
+            .main-nav ul {
+                margin-top: 1rem;
+            }
+            
+            .main-nav li {
+                margin: 0 1rem;
+            }
+            
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .hero-description {
+                font-size: 1rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .text-input-container {
+                flex-direction: column;
+            }
+            
+            main {
+                margin-top: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="main-header">
+        <div class="logo">Verta</div>
+        <nav class="main-nav">
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#demo">Demo</a></li>
+                <li><a href="#about">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="home" class="hero-section">
+            <h1 class="hero-title">Verta: Arabic Sign Language Translator</h1>
+            <p class="hero-description">
+                AI-powered platform designed specifically for Arabic Sign Language (ArSL), 
+                bridging communication gaps in the Arabic deaf community through real-time gesture recognition.
+            </p>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="features-section">
+            <h2 class="section-title">What our project does?!</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>👐 Real-Time ArSL Recognition</h3>
+                    <p>Detects and translates Arabic Sign Language gestures using webcam input, specifically trained for regional variations.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📝 Text to ArSL Animation</h3>
+                    <p>Type any word and see it come to life as animated sign language, or show a sign and get the text translation. </p>
+                </div>
+                <div class="feature-card">
+                    <h3>🌍 Made for Egyptian Sign Language</h3>
+                    <p>Specifically designed for Arabic Sign Language (ArSL), capturing the authentic gestures and expressions used by the deaf community in Arabic countries.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Demo(trail ) -->
+        <section id="demo" class="demo-section">
+            <h2 class="section-title">Demo </h2>
+            <p class="demo-subtitle">Try our Arabic Sign Language recognition system</p>
+            
+            <!-- Webcam Interface(when poeple open the camera) -->
+            <div class="webcam-container">
+                <video id="webcam" autoplay muted playsinline style="display: none;"></video>
+                <div class="camera-controls">
+                    <button id="startBtn" class="control-btn">Start Camera</button>
+                    <button id="stopBtn" class="control-btn" disabled>Stop Camera</button>
+                </div>
+            </div>
+            
+            <!-- Results Display -->
+            <div class="results-display">
+                <h3 class="results-heading">Translation Results</h3>
+                <p id="resultText">Camera not active. Start camera and show Arabic signs.</p>
+            </div>
+            
+            <!-- Text to Sign -->
+            <div class="text-input-container">
+                <h3>Convert Text to Arabic Sign language </h3>
+                <input type="text" id="textInput" class="text-input" placeholder="Enter text in Arabic...">
+                <button id="convertBtn" class="convert-btn">Generate Sign Animation</button>
+            </div>
+            
+            <!-- Animation Area -->
+            <div id="animationArea" class="animation-placeholder">
+                <h3>Arabic Sign Animation</h3>
+                <p>Generated ArSL animation will appear here</p>
+            </div>
+        </section>
+
+        <!-- About Section(website info) -->
+        <section id="about" class="about-section">
+            <h2 class="section-title">About Verta Project</h2>
+            <p class="about-text">
+                Verta is an academic research project focused on developing accessible AI solutions 
+                for the Egyptian deaf community. Our technology leverages TensorFlow.js and custom 
+                datasets to accurately recognize and generate Arabic Sign Language.
+            </p>
+            
+            <div class="technical-details">
+                <h3 class="tech-heading">Technical Implementation</h3>
+                <ul class="tech-list">
+                    <li>TensorFlow.js for browser-based machine learning</li>
+                    <li>Custom Arabic Sign Language dataset training</li>
+                    <li>Real-time pose estimation and gesture classification</li>
+                    <li>Mobile-first responsive design</li>
+                    <li>Privacy-focused client-side processing</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <p>&copy; 2025-2026 Verta Project - Arabic Sign Language translator </p>
+        <p>Advancing accessibility through AI technology</p>
+    </footer>
+
+    <script>
+        // ===== MAIN JAVASCRIPT FUNCTIONALITY =====
+        
+        // DOM Elements - cached for better performance
+        const videoElement = document.getElementById('webcam');
+        const startButton = document.getElementById('startBtn');
+        const stopButton = document.getElementById('stopBtn');
+        const resultText = document.getElementById('resultText');
+        const textInput = document.getElementById('textInput');
+        const convertButton = document.getElementById('convertBtn');
+        const animationArea = document.getElementById('animationArea');
+        
+        // Application state
+        let cameraStream = null;
+        let isModelLoaded = false;
+        
+        // ===== CAMERA CONTROLS =====
+        
+        // Start camera function
+        startButton.addEventListener('click', async function() {
+            try {
+                console.log('Starting camera...');
+                
+                // Request camera access
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: 640, 
+                        height: 480 
+                    } 
+                });
+                
+                // Setup video element
+                videoElement.srcObject = cameraStream;
+                videoElement.style.display = 'block';
+                
+                // Update UI state
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                resultText.textContent = 'Camera active! Show Arabic signs to the camera.';
+                
+                // Start sign detection simulation
+                simulateSignDetection();
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                handleCameraError(error);
+            }
+        });
+        
+        // Stop camera function
+        stopButton.addEventListener('click', function() {
+            if (cameraStream) {
+                // Stop all camera tracks
+                cameraStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+                cameraStream = null;
+            }
+            
+            // Reset UI
+            videoElement.srcObject = null;
+            videoElement.style.display = 'none';
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            resultText.textContent = 'Camera stopped.';
+        });
+        
+        // Camera error handling
+        function handleCameraError(error) {
+            let errorMessage = 'Could not access camera. ';
+            
+            if (error.name === 'NotAllowedError') {
+                errorMessage += 'Please allow camera permissions.';
+            } else if (error.name === 'NotFoundError') {
+                errorMessage += 'No camera found on this device.';
+            } else {
+                errorMessage += 'Technical error: ' + error.message;
+            }
+            
+            alert(errorMessage);
+            resultText.textContent = 'Camera unavailable';
+        }
+        
+        // ===== SIGN DETECTION SIMULATION =====
+        
+        function simulateSignDetection() {
+            // This simulates real sign detection - replace with actual TensorFlow.js code
+            const detectionInterval = setInterval(() => {
+                if (!cameraStream) {
+                    clearInterval(detectionInterval);
+                    return;
+                }
+                
+                // Simulate random sign detection
+                const egyptianSigns = ['Hello', 'Thank you', 'Please', 'Water', 'Food', 'Help'];
+                const randomSign = egyptianSigns[Math.floor(Math.random() * egyptianSigns.length)];
+                
+                // Only update occasionally to feel more realistic
+                if (Math.random() > 0.8) {
+                    resultText.textContent = `Detected Egyptian Sign: "${randomSign}"`;
+                }
+                
+            }, 2000);
+        }
+        
+        // ===== TEXT TO SIGN CONVERSION =====
+        
+        convertButton.addEventListener('click', function() {
+            const inputText = textInput.value.trim();
+            
+            if (!inputText) {
+                alert('Please enter some text to convert to Egyptian Sign Language.');
+                return;
+            }
+            
+            // Show loading state
+            animationArea.innerHTML = `
+                <h3>Generating Egyptian Sign for:</h3>
+                <p>"${inputText}"</p>
+                <div style="color: #3182ce; margin: 1rem 0;">
+                    ⏳ Processing ESL animation...
+                </div>
+            `;
+            
+            // Simulate processing delay
+            setTimeout(() => {
+                animationArea.innerHTML = `
+                    <h3>Egyptian Sign Language:</h3>
+                    <p>"${inputText}"</p>
+                    <div style="background: #e2e8f0; padding: 2rem; border-radius: 8px; margin-top: 1rem;">
+                        <p style="color: #38a169; font-weight: bold;">✅ ESL Animation Ready</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                            Animated avatar demonstrating the Egyptian sign for "${inputText}"
+                        </p>
+                    </div>
+                `;
+            }, 2000);
+        });
+        
+        // ===== INITIALIZATION =====
+        
+        // Page load initialization
+        window.addEventListener('load', function() {
+            console.log('Verta Egyptian Sign Language Translator loaded successfully');
+            
+            // Check if TensorFlow.js is available
+            if (typeof tf !== 'undefined') {
+                console.log('TensorFlow.js is ready for Egyptian sign language models');
+            }
+        });
+        
+        // Enter key support for text input
+        textInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                convertButton.click();
+            }
+        });
+    </script>
+</body>
+</html>
